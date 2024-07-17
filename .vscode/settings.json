@@ -1,0 +1,21 @@
+{
+  "todohighlight.defaultStyle": {},
+  "todohighlight.keywords": [
+    {
+      "text": "Done:",
+      "color": "#fff",
+      "backgroundColor": "#00aa00",
+      "overviewRulerColor": "grey"
+    }
+  ],
+  "todohighlight.include": [
+    "**/*.js",
+    "**/*.jsx",
+    "**/*.ts",
+    "**/*.tsx",
+    "**/*.html",
+    "**/*.php",
+    "**/*.css",
+    "**/*.scss"
+  ]
+}
