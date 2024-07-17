@@ -7,12 +7,14 @@ class ReactiveEffect {
   }
   run() {
     activeEffect = this;
-    this._fn();
+    return this._fn();
   }
 }
 export function effect(fn) {
   const _effect = new ReactiveEffect(fn);
   _effect.run();
+  const runner = _effect.run.bind(_effect);
+  return runner;
 }
 
 export function track(target, key) {
@@ -35,7 +37,6 @@ export function trigger(target, key) {
   let depsMap = targetMap.get(target);
 
   let deps = depsMap.get(key);
-  console.log(deps);
 
   for (const effect of deps) {
     effect.run();
