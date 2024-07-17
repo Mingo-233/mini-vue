@@ -1,0 +1,1 @@
+{"version":3,"file":"mini-vue.esm-bundler.js","sources":["../src/index.ts"],"sourcesContent":["export function add(x,y){\n    return x+y\n}"],"names":[],"mappings":"AAAO,SAAS,GAAG,CAAC,CAAC,CAAC,CAAC,CAAC;AACxB,IAAI,OAAO,CAAC,CAAC,CAAC;AACd;;;;"}
