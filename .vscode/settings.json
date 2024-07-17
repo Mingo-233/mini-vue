@@ -6,6 +6,12 @@
       "color": "#fff",
       "backgroundColor": "#00aa00",
       "overviewRulerColor": "grey"
+    },
+    {
+      "text": "Note:",
+      "color": "#f5f6f7",
+      "backgroundColor": "#9ECBFF",
+      "overviewRulerColor": "grey"
     }
   ],
   "todohighlight.include": [

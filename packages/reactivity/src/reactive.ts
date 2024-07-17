@@ -2,14 +2,14 @@ import { trigger, track } from "./effect";
 export function reactive(val) {
   return new Proxy(val, {
     get(target, key) {
-      const res = Reflect.get(target, key);
-      //TODO: 依赖收集
+      //Done: 依赖收集
       track(target, key);
-      return res;
+      return Reflect.get(target, key);
     },
     set(target, key, value) {
+      // Note: 先set值，在拿新值去更新
       const res = Reflect.set(target, key, value);
-      //TODO: 触发更新
+      //Done: 触发更新
       trigger(target, key);
       return res;
     },
