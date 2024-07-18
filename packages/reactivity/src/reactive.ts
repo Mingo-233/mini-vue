@@ -1,5 +1,10 @@
 import { trigger, track } from "./effect";
+import { baseHandler } from "./baseHandler";
 export function reactive(val) {
+  return new Proxy(val, baseHandler);
+}
+
+export function readonly(val) {
   return new Proxy(val, {
     get(target, key) {
       //Done: 依赖收集
