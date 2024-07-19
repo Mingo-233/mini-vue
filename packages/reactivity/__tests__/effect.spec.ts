@@ -39,8 +39,9 @@ describe("effect", () => {
     person.age = 12;
     expect(temp).toBe(12);
     stop(runner);
-    // 停止后，响应式失效
-    person.age = 13;
+    // 停止后，会清除依赖，同时要保证再次触发getter的时候不重新收集
+    // person.age = 13;
+    person.age++;
     expect(temp).toBe(12);
 
     // 被stop的effect仍然可以手动触发
