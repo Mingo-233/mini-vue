@@ -2,15 +2,16 @@ import { extend } from "../../shared/index";
 const targetMap = new Map();
 let activeEffect: any = null;
 let shouldTrack = false;
-class ReactiveEffect {
+export class ReactiveEffect {
   private _fn;
   private isActive = true;
   public deps = [];
   public scheduler: null | (() => void) = null;
   public onStop: null | (() => void) = null;
 
-  constructor(fn) {
+  constructor(fn, scheduler) {
     this._fn = fn;
+    this.scheduler = scheduler;
   }
   run() {
     if (!this.isActive) {
@@ -30,8 +31,8 @@ class ReactiveEffect {
     this.isActive = false;
   }
 }
-export function effect(fn, option = {}) {
-  const _effect = new ReactiveEffect(fn);
+export function effect(fn, option: any = {}) {
+  const _effect = new ReactiveEffect(fn, option.scheduler);
   extend(_effect, option);
   _effect.run();
   const runner: any = _effect.run.bind(_effect);
