@@ -5,6 +5,7 @@ import { reactive } from "./reactive";
 class RefImpl {
   private _value;
   private _rawValue;
+  public __v_isRef = true;
   deps = new Set();
   constructor(value) {
     this._value = covert(value);
@@ -31,4 +32,11 @@ function covert(val) {
 
 export function ref(val) {
   return new RefImpl(val);
+}
+export function isRef(val) {
+  return !!val.__v_isRef;
+}
+
+export function unRef(val) {
+  return isRef(val) ? val.value : val;
 }

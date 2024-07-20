@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { ref } from "../src/ref";
+import { ref, isRef, unRef } from "../src/ref";
 import { effect } from "../src/effect";
+import { reactive } from "../src";
 describe("ref", () => {
   it("ref .value", () => {
     // 1. ref可以正常取值，针对基本数据类型
@@ -38,5 +39,25 @@ describe("ref", () => {
     });
     obj.value.foo = 2;
     expect(dummy).toBe(2);
+  });
+});
+
+describe("ref tool function", () => {
+  it("is ref", () => {
+    const num = ref(1);
+    const dummy = 2;
+    const person = reactive({
+      age: 1,
+    });
+    expect(isRef(num)).toBe(true);
+    expect(isRef(dummy)).toBe(false);
+    expect(isRef(person)).toBe(false);
+  });
+
+  it("unref", () => {
+    const num = ref(1);
+    const dummy = 2;
+    expect(unRef(num)).toBe(1);
+    expect(unRef(dummy)).toBe(2);
   });
 });
