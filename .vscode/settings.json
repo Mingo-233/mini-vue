@@ -23,5 +23,6 @@
     "**/*.php",
     "**/*.css",
     "**/*.scss"
-  ]
+  ],
+  "cSpell.words": ["vnode"]
 }

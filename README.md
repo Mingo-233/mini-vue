@@ -3,6 +3,6 @@
 
 手撸实现Vue3核心模块
 
+- reactivity
 - compiler-core
 - runtime-core
-- runtime-dom
