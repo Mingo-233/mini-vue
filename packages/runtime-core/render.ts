@@ -17,6 +17,7 @@ function processComponent(vnode, container) {
 }
 function processElement(vnode, container) {
   const el = document.createElement(vnode.type);
+  vnode.el = el;
   if (typeof vnode.children === "string") {
     el.textContent = vnode.children;
   } else if (Array.isArray(vnode.children)) {
@@ -32,18 +33,22 @@ function processElement(vnode, container) {
   container.append(el);
 }
 
-function mountComponent(vnode, container) {
-  const instance = createComponentInstance(vnode);
+function mountComponent(initialVNode, container) {
+  const instance = createComponentInstance(initialVNode);
   setupComponent(instance);
-  setupRenderEffect(instance, container);
+  setupRenderEffect(instance, initialVNode, container);
 }
 function mountChildren(vnode, container) {
   vnode.children.forEach((v) => {
     patch(v, container);
   });
 }
-function setupRenderEffect(instance, container) {
-  const subTree = instance.render && instance.render();
+function setupRenderEffect(instance, initialVNode, container) {
+  const { proxy } = instance;
+  const subTree = instance.render.call(proxy);
+  console.log("subTree", subTree);
 
   patch(subTree, container);
+  // instance.el = subTree.el;
+  initialVNode.el = subTree.el;
 }

@@ -3,16 +3,34 @@ function createVNode(type, props, children) {
         type,
         props,
         children,
+        el: null,
     };
     return vnode;
 }
 
 const isObject = (val) => val !== null && typeof val === "object";
 
+const publicPropertiesMap = {
+    $el: function (i) {
+        return i.vnode.el;
+    },
+};
+const PublicInstanceProxyHandlers = {
+    get(instance, key) {
+        const { setupState } = instance;
+        if (setupState[key])
+            return setupState[key];
+        const publicGetter = publicPropertiesMap[key];
+        if (publicGetter)
+            return publicGetter();
+    },
+};
+
 function createComponentInstance(vnode) {
     const instance = {
         vnode,
         type: vnode.type,
+        setupResult: {},
     };
     return instance;
 }
@@ -25,6 +43,7 @@ function setupStatefulComponent(instance) {
     if (setup) {
         const setupResult = setup();
         handleSetupResult(instance, setupResult);
+        instance.proxy = new Proxy(instance, PublicInstanceProxyHandlers);
     }
 }
 function handleSetupResult(instance, setupResult) {
@@ -42,10 +61,6 @@ function render(vnode, container) {
     patch(vnode, container);
 }
 function patch(vnode, container) {
-    // TODO 判断vnode 是不是一个 element
-    // 是 element 那么就应该处理 element
-    // 思考题： 如何去区分是 element 还是 component 类型呢？
-    // processElement();
     if (typeof vnode.type === "string") {
         processElement(vnode, container);
     }
@@ -58,6 +73,7 @@ function processComponent(vnode, container) {
 }
 function processElement(vnode, container) {
     const el = document.createElement(vnode.type);
+    vnode.el = el;
     if (typeof vnode.children === "string") {
         el.textContent = vnode.children;
     }
@@ -72,19 +88,23 @@ function processElement(vnode, container) {
     }
     container.append(el);
 }
-function mountComponent(vnode, container) {
-    const instance = createComponentInstance(vnode);
+function mountComponent(initialVNode, container) {
+    const instance = createComponentInstance(initialVNode);
     setupComponent(instance);
-    setupRenderEffect(instance, container);
+    setupRenderEffect(instance, initialVNode, container);
 }
 function mountChildren(vnode, container) {
     vnode.children.forEach((v) => {
         patch(v, container);
     });
 }
-function setupRenderEffect(instance, container) {
-    const subTree = instance.render && instance.render();
+function setupRenderEffect(instance, initialVNode, container) {
+    const { proxy } = instance;
+    const subTree = instance.render.call(proxy);
+    console.log("subTree", subTree);
     patch(subTree, container);
+    // instance.el = subTree.el;
+    initialVNode.el = subTree.el;
 }
 
 function createApp(rootComponent) {
