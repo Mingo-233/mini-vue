@@ -1,3 +1,7 @@
+const extend = Object.assign;
+const isObject = (val) => val !== null && typeof val === "object";
+const hasOwn = (val, key) => Object.prototype.hasOwnProperty.call(val, key);
+
 var ShapeFlags;
 (function (ShapeFlags) {
     ShapeFlags[ShapeFlags["ELEMENT"] = 1] = "ELEMENT";
@@ -30,12 +34,11 @@ function createVNode(type, props, children) {
     else if (Array.isArray(children)) {
         vnode.ShapeFlag |= ShapeFlags.ARRAY_CHILDREN;
     }
+    else if (isObject(children)) {
+        vnode.ShapeFlag |= ShapeFlags.SLOTS_CHILDREN;
+    }
     return vnode;
 }
-
-const extend = Object.assign;
-const isObject = (val) => val !== null && typeof val === "object";
-const hasOwn = (val, key) => Object.prototype.hasOwnProperty.call(val, key);
 
 const targetMap = new Map();
 function trigger(target, key) {
@@ -125,9 +128,8 @@ function createReactiveObject(val, handler) {
 }
 
 const publicPropertiesMap = {
-    $el: function (i) {
-        return i.vnode.el;
-    },
+    $el: (i) => i.vnode.el,
+    $slots: (i) => i.slots,
 };
 const PublicInstanceProxyHandlers = {
     get(instance, key) {
@@ -155,27 +157,45 @@ function emit(instance, event, ...arg) {
     fn && fn(...arg);
 }
 
+function initSlots(instance, children) {
+    const { vnode } = instance;
+    if (ShapeFlags.SLOTS_CHILDREN & vnode.ShapeFlag) {
+        normalizeObjectSlots(instance, children);
+    }
+}
+function normalizeObjectSlots(instance, children) {
+    for (const key in children) {
+        let generateSlotFn = children[key];
+        instance.slots[key] = (params) => normalizeSlotValue(generateSlotFn(params));
+        //   generateSlotFn(params);
+    }
+}
+function normalizeSlotValue(value) {
+    // 这里调用插槽函数，已经生成普通元素的节点内容，需要返回数组。如果还是返回对象，按逻辑仍然会识别为插槽节点
+    return Array.isArray(value) ? value : [value];
+}
+
 function createComponentInstance(vnode) {
     const instance = {
         vnode,
         type: vnode.type,
         props: {},
         setupState: {},
+        slots: {},
         emit: () => { },
     };
     instance.emit = emit.bind(null, instance);
     return instance;
 }
 function setupComponent(instance) {
-    // TODO:    initSlots
     initProps(instance, instance.vnode.props);
+    initSlots(instance, instance.vnode.children);
     setupStatefulComponent(instance);
 }
 function setupStatefulComponent(instance) {
     const component = instance.type;
     const { setup } = component;
     if (setup) {
-        console.log("instance.props", instance.props);
         const setupResult = setup(shallowReadonly(instance.props), {
             emit: instance.emit,
         });
@@ -271,4 +291,11 @@ function h(type, props, children) {
     return createVNode(type, props, children);
 }
 
-export { createApp, h };
+function renderSlots(slots, slotName, params) {
+    const slot = slots[slotName];
+    if (slot && typeof slot === "function") {
+        return createVNode("div", {}, slot(params));
+    }
+}
+
+export { createApp, h, renderSlots };
