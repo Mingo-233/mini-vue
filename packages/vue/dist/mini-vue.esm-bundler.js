@@ -1,14 +1,128 @@
+var ShapeFlags;
+(function (ShapeFlags) {
+    ShapeFlags[ShapeFlags["ELEMENT"] = 1] = "ELEMENT";
+    ShapeFlags[ShapeFlags["FUNCTIONAL_COMPONENT"] = 2] = "FUNCTIONAL_COMPONENT";
+    ShapeFlags[ShapeFlags["STATEFUL_COMPONENT"] = 4] = "STATEFUL_COMPONENT";
+    ShapeFlags[ShapeFlags["TEXT_CHILDREN"] = 8] = "TEXT_CHILDREN";
+    ShapeFlags[ShapeFlags["ARRAY_CHILDREN"] = 16] = "ARRAY_CHILDREN";
+    ShapeFlags[ShapeFlags["SLOTS_CHILDREN"] = 32] = "SLOTS_CHILDREN";
+    ShapeFlags[ShapeFlags["TELEPORT"] = 64] = "TELEPORT";
+    ShapeFlags[ShapeFlags["SUSPENSE"] = 128] = "SUSPENSE";
+    ShapeFlags[ShapeFlags["COMPONENT_SHOULD_KEEP_ALIVE"] = 256] = "COMPONENT_SHOULD_KEEP_ALIVE";
+    ShapeFlags[ShapeFlags["COMPONENT_KEPT_ALIVE"] = 512] = "COMPONENT_KEPT_ALIVE";
+    ShapeFlags[ShapeFlags["COMPONENT"] = 6] = "COMPONENT";
+})(ShapeFlags || (ShapeFlags = {}));
+
 function createVNode(type, props, children) {
     const vnode = {
         type,
         props,
         children,
-        el: null,
+        ShapeFlag: typeof type === "string"
+            ? ShapeFlags.ELEMENT
+            : ShapeFlags.STATEFUL_COMPONENT,
+        el: undefined,
     };
+    if (typeof children === "string") {
+        // 按位或赋值运算符
+        vnode.ShapeFlag |= ShapeFlags.TEXT_CHILDREN;
+    }
+    else if (Array.isArray(children)) {
+        vnode.ShapeFlag |= ShapeFlags.ARRAY_CHILDREN;
+    }
     return vnode;
 }
 
+const extend = Object.assign;
 const isObject = (val) => val !== null && typeof val === "object";
+const hasOwn = (val, key) => Object.prototype.hasOwnProperty.call(val, key);
+
+const targetMap = new Map();
+function trigger(target, key) {
+    let depsMap = targetMap.get(target);
+    let deps = depsMap.get(key);
+    triggerEffects(deps);
+}
+function triggerEffects(deps) {
+    for (const effect of deps) {
+        if (effect.scheduler) {
+            effect.scheduler();
+        }
+        else {
+            effect.run();
+        }
+    }
+}
+
+const Getter = createGetter();
+const readonlyGetter = createGetter({
+    isReadonly: true,
+    isShallow: false,
+});
+const shallowReadonlyGetter = createGetter({
+    isReadonly: true,
+    isShallow: true,
+});
+const Setter = createSetter();
+function createGetter(option = {
+    isReadonly: false,
+    isShallow: false,
+}) {
+    return function get(target, key) {
+        if (key === "__v_isReadonly" /* ReactiveFlags.IS_READONLY */) {
+            return option.isReadonly;
+        }
+        else if (key === "__v_isReactive" /* ReactiveFlags.IS_REACTIVE */) {
+            return !option.isReadonly;
+        }
+        const res = Reflect.get(target, key);
+        if (option.isShallow)
+            return res;
+        if (isObject(res)) {
+            return option.isReadonly ? readonly(res) : reactive(res);
+        }
+        if (!option.isReadonly) ;
+        return res;
+    };
+}
+function createSetter() {
+    return function set(target, key, value) {
+        // Note: 先set值，在拿新值去更新
+        const res = Reflect.set(target, key, value);
+        //Done: 触发更新
+        trigger(target, key);
+        return res;
+    };
+}
+const mutableHandlers = {
+    get: Getter,
+    set: Setter,
+};
+const readonlyHandler = {
+    get: readonlyGetter,
+    set: function set(target, key, value) {
+        console.warn(`set on key ${key} failed, because it is readonly`, target);
+        return true;
+    },
+};
+const shallowReadonlyHandler = extend({}, readonlyHandler, { get: shallowReadonlyGetter, });
+
+function reactive(val) {
+    return createReactiveObject(val, mutableHandlers);
+}
+function readonly(val) {
+    return createReactiveObject(val, readonlyHandler);
+}
+function shallowReadonly(val) {
+    return createReactiveObject(val, shallowReadonlyHandler);
+}
+function createReactiveObject(val, handler) {
+    if (!isObject(val)) {
+        console.warn(`target ${val} 必须是一个对象`);
+        return val;
+    }
+    return new Proxy(val, handler);
+}
 
 const publicPropertiesMap = {
     $el: function (i) {
@@ -17,31 +131,54 @@ const publicPropertiesMap = {
 };
 const PublicInstanceProxyHandlers = {
     get(instance, key) {
-        const { setupState } = instance;
-        if (setupState[key])
+        const { setupState, props } = instance;
+        if (hasOwn(setupState, key)) {
             return setupState[key];
+        }
+        else if (hasOwn(props, key)) {
+            return props[key];
+        }
         const publicGetter = publicPropertiesMap[key];
         if (publicGetter)
-            return publicGetter();
+            return publicGetter(instance);
     },
 };
+
+function initProps(instance, props) {
+    props && (instance.props = props);
+}
+
+function emit(instance, event, ...arg) {
+    const { props } = instance;
+    const eventName = `on${event.charAt(0).toUpperCase()}${event.slice(1)}`;
+    const fn = props[eventName];
+    fn && fn(...arg);
+}
 
 function createComponentInstance(vnode) {
     const instance = {
         vnode,
         type: vnode.type,
-        setupResult: {},
+        props: {},
+        setupState: {},
+        emit: () => { },
     };
+    instance.emit = emit.bind(null, instance);
     return instance;
 }
 function setupComponent(instance) {
+    // TODO:    initSlots
+    initProps(instance, instance.vnode.props);
     setupStatefulComponent(instance);
 }
 function setupStatefulComponent(instance) {
     const component = instance.type;
     const { setup } = component;
     if (setup) {
-        const setupResult = setup();
+        console.log("instance.props", instance.props);
+        const setupResult = setup(shallowReadonly(instance.props), {
+            emit: instance.emit,
+        });
         handleSetupResult(instance, setupResult);
         instance.proxy = new Proxy(instance, PublicInstanceProxyHandlers);
     }
@@ -61,32 +198,45 @@ function render(vnode, container) {
     patch(vnode, container);
 }
 function patch(vnode, container) {
-    if (typeof vnode.type === "string") {
+    const { ShapeFlag } = vnode;
+    // 与运算符
+    if (ShapeFlag & ShapeFlags.ELEMENT) {
         processElement(vnode, container);
     }
-    else if (isObject(vnode.type)) {
+    else if (ShapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
         processComponent(vnode, container);
     }
 }
 function processComponent(vnode, container) {
     mountComponent(vnode, container);
 }
-function processElement(vnode, container) {
+function mountElement(vnode, container) {
     const el = document.createElement(vnode.type);
     vnode.el = el;
-    if (typeof vnode.children === "string") {
+    const { children, ShapeFlag } = vnode;
+    if (ShapeFlag & ShapeFlags.TEXT_CHILDREN) {
         el.textContent = vnode.children;
     }
-    else if (Array.isArray(vnode.children)) {
+    else if (ShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
         mountChildren(vnode, el);
     }
     // props
     const { props } = vnode;
     for (const key in props) {
+        const isOn = (key) => /^on[A-Z]/.test(key);
         const val = props[key];
-        el.setAttribute(key, val);
+        if (isOn(key)) {
+            const event = key.slice(2).toLowerCase();
+            el.addEventListener(event, val);
+        }
+        else {
+            el.setAttribute(key, val);
+        }
     }
     container.append(el);
+}
+function processElement(vnode, container) {
+    mountElement(vnode, container);
 }
 function mountComponent(initialVNode, container) {
     const instance = createComponentInstance(initialVNode);
@@ -101,9 +251,8 @@ function mountChildren(vnode, container) {
 function setupRenderEffect(instance, initialVNode, container) {
     const { proxy } = instance;
     const subTree = instance.render.call(proxy);
-    console.log("subTree", subTree);
     patch(subTree, container);
-    // instance.el = subTree.el;
+    // Note: 组件会找到一个真实dom内容的节点，作为它根元素。而这必须在patch之后，因为patch之后才会有el属性
     initialVNode.el = subTree.el;
 }
 

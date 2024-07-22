@@ -1,4 +1,4 @@
-import { createVNode } from "./vnode";
+import createVNode from "./vnode";
 import { render } from "./render";
 export function createApp(rootComponent) {
   const vnode = createVNode(rootComponent);
