@@ -1,5 +1,11 @@
 # 这里分解每个动作，或者模块要做的内容
 
+### createRenderer 自定义渲染实现
+1. 原先针对dom的操作封装一层抽象层，runtime-dom.
+    - runtime-core createRender
+    - createElement patchProp insert
+2. 包装createApp
+3. 实现canvas平台的渲染器 example/customRenderer/App.js
 
 ### inject和provide实现
 pre 调试样例准备

@@ -1,6 +1,7 @@
 import typescript from "@rollup/plugin-typescript";
 export default {
-  input: "./packages/runtime-core/index.ts",
+  plugins: [typescript()],
+  input: "./packages/runtime-dom/index.ts",
   output: [
     // {
     //     format: "cjs",
@@ -14,5 +15,4 @@ export default {
       sourcemap: false,
     },
   ],
-  plugins: [typescript()],
 };
