@@ -1,0 +1,26 @@
+# 这里分解每个动作，或者模块要做的内容
+
+
+### inject和provide实现
+pre 调试样例准备
+1. 创建组件实例的时候，新增provides属性，和记录父组件实例
+2. 组件处理的周期中，加入父组件的传递
+3. 创建inject和provide方法
+    - inject方法，获取父组件的provides属性，继承并创建新的对象
+    - provide方法中，去除父组件中的provides的值。
+        - 如有赋值默认值的函数，执行
+4. 入口文件中导出
+
+### getCurrentInstance实现
+pre 调试样例准备
+1. 定义 getCurrentInstance 和 setCurrentInstance方法
+2. 在setup中的执行
+3. 入口文件抛出
+
+### Fragment和Text类型
+pre 调试样例准备
+1. 在vnode中定义Fragment,和Text symbol类型
+2. createTextVNode方法
+3. 新的类型2个处理函数 processText和processFragment
+4. patch过程中，针对新的2个类型做处理 
+5. 原先slots 方法中，使用createTextVNode

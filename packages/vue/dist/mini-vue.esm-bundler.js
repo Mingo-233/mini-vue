@@ -17,6 +17,8 @@ var ShapeFlags;
     ShapeFlags[ShapeFlags["COMPONENT"] = 6] = "COMPONENT";
 })(ShapeFlags || (ShapeFlags = {}));
 
+const Fragment = Symbol("Fragment");
+const Text = Symbol("Text");
 function createVNode(type, props, children) {
     const vnode = {
         type,
@@ -38,6 +40,9 @@ function createVNode(type, props, children) {
         vnode.ShapeFlag |= ShapeFlags.SLOTS_CHILDREN;
     }
     return vnode;
+}
+function createTextVNode(text) {
+    return createVNode(Text, null, text);
 }
 
 const targetMap = new Map();
@@ -175,7 +180,8 @@ function normalizeSlotValue(value) {
     return Array.isArray(value) ? value : [value];
 }
 
-function createComponentInstance(vnode) {
+let currentInstance = null;
+function createComponentInstance(vnode, parent) {
     const instance = {
         vnode,
         type: vnode.type,
@@ -183,6 +189,8 @@ function createComponentInstance(vnode) {
         setupState: {},
         slots: {},
         emit: () => { },
+        provides: parent ? parent.provides : {},
+        parent: parent,
     };
     instance.emit = emit.bind(null, instance);
     return instance;
@@ -196,9 +204,11 @@ function setupStatefulComponent(instance) {
     const component = instance.type;
     const { setup } = component;
     if (setup) {
+        setCurrentInstance(instance);
         const setupResult = setup(shallowReadonly(instance.props), {
             emit: instance.emit,
         });
+        setCurrentInstance(null);
         handleSetupResult(instance, setupResult);
         instance.proxy = new Proxy(instance, PublicInstanceProxyHandlers);
     }
@@ -213,24 +223,48 @@ function finishComponentSetup(instance) {
     const component = instance.type;
     instance.render = component.render;
 }
+function getCurrentInstance() {
+    return currentInstance;
+}
+function setCurrentInstance(instance) {
+    currentInstance = instance;
+}
 
 function render(vnode, container) {
-    patch(vnode, container);
+    patch(vnode, container, null);
 }
-function patch(vnode, container) {
-    const { ShapeFlag } = vnode;
-    // 与运算符
-    if (ShapeFlag & ShapeFlags.ELEMENT) {
-        processElement(vnode, container);
+function patch(vnode, container, parent) {
+    const { ShapeFlag, type } = vnode;
+    switch (type) {
+        case Text:
+            processText(vnode, container);
+            break;
+        case Fragment:
+            processFragment(vnode, container, parent);
+            break;
+        default:
+            // 与运算符
+            if (ShapeFlag & ShapeFlags.ELEMENT) {
+                processElement(vnode, container, parent);
+            }
+            else if (ShapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
+                processComponent(vnode, container, parent);
+            }
+            break;
     }
-    else if (ShapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
-        processComponent(vnode, container);
-    }
 }
-function processComponent(vnode, container) {
-    mountComponent(vnode, container);
+function processText(vnode, container) {
+    const el = document.createTextNode(vnode.children);
+    vnode.el = el;
+    container.append(el);
 }
-function mountElement(vnode, container) {
+function processFragment(vnode, container, parent) {
+    mountChildren(vnode, container, parent);
+}
+function processComponent(vnode, container, parent) {
+    mountComponent(vnode, container, parent);
+}
+function mountElement(vnode, container, parent) {
     const el = document.createElement(vnode.type);
     vnode.el = el;
     const { children, ShapeFlag } = vnode;
@@ -238,7 +272,7 @@ function mountElement(vnode, container) {
         el.textContent = vnode.children;
     }
     else if (ShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
-        mountChildren(vnode, el);
+        mountChildren(vnode, el, parent);
     }
     // props
     const { props } = vnode;
@@ -255,23 +289,24 @@ function mountElement(vnode, container) {
     }
     container.append(el);
 }
-function processElement(vnode, container) {
-    mountElement(vnode, container);
+function processElement(vnode, container, parent) {
+    mountElement(vnode, container, parent);
 }
-function mountComponent(initialVNode, container) {
-    const instance = createComponentInstance(initialVNode);
+function mountComponent(initialVNode, container, parent) {
+    const instance = createComponentInstance(initialVNode, parent);
     setupComponent(instance);
     setupRenderEffect(instance, initialVNode, container);
 }
-function mountChildren(vnode, container) {
+function mountChildren(vnode, container, parent) {
     vnode.children.forEach((v) => {
-        patch(v, container);
+        patch(v, container, parent);
     });
 }
 function setupRenderEffect(instance, initialVNode, container) {
     const { proxy } = instance;
     const subTree = instance.render.call(proxy);
-    patch(subTree, container);
+    // Note: 当前实例作为下一个组件的父级
+    patch(subTree, container, instance);
     // Note: 组件会找到一个真实dom内容的节点，作为它根元素。而这必须在patch之后，因为patch之后才会有el属性
     initialVNode.el = subTree.el;
 }
@@ -294,8 +329,39 @@ function h(type, props, children) {
 function renderSlots(slots, slotName, params) {
     const slot = slots[slotName];
     if (slot && typeof slot === "function") {
-        return createVNode("div", {}, slot(params));
+        return createVNode(Fragment, {}, slot(params));
     }
 }
 
-export { createApp, h, renderSlots };
+function inject(key, defaultVal) {
+    const instance = getCurrentInstance();
+    if (instance) {
+        let provides = instance.parent.provides;
+        if (key in provides) {
+            return provides[key];
+        }
+        else if (defaultVal) {
+            if (typeof defaultVal === "function") {
+                return defaultVal();
+            }
+            else {
+                return defaultVal;
+            }
+        }
+    }
+}
+function provide(key, value) {
+    const instance = getCurrentInstance();
+    if (instance) {
+        const { parent } = instance;
+        //   Note: 因为在初始化组件实例的时候，会去继承父级的provides。 这个继承，赋值的就是父级上的provides这个对象的地址。
+        //         所以这里如果等于，说明当前实例还没有自己的provides属性，需要重新创建一个provides对象来存储子组件自己的依赖项。
+        //         确保子组件有独立的 provides 对象，避免污染和副作用
+        if (parent.provides === instance.provides) {
+            instance.provides = Object.create(parent.provides);
+        }
+        instance.provides[key] = value;
+    }
+}
+
+export { createApp, createTextVNode, getCurrentInstance, h, inject, provide, renderSlots };

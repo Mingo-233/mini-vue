@@ -1,4 +1,4 @@
-import { h } from "../../dist/mini-vue.esm-bundler.js";
+import { h, createTextVNode } from "../../dist/mini-vue.esm-bundler.js";
 import Foo from "./Foo.js";
 export default {
   name: "App",
@@ -9,12 +9,18 @@ export default {
         id: "root",
       },
       [
-        h(Foo, {
-        }, {
-          header: ({ age }) => h('p', {}, 'header:' + age),
-          footer: () => h('p', {}, 'footer')
-
-        }),
+        h(
+          Foo,
+          {},
+          {
+            header: ({ age }) =>
+              h("p", {}, [
+                h("div", {}, "header:" + age),
+                createTextVNode("这是一个createTextVNod创建的内容"),
+              ]),
+            footer: () => h("p", {}, "footer"),
+          }
+        ),
       ]
     );
   },
