@@ -1,4 +1,4 @@
-import { createRenderer } from "../runtime-core";
+import { createRenderer, createVNode } from "../runtime-core";
 function createElement(type) {
   return document.createElement(type);
 }
@@ -22,7 +22,13 @@ const renderer = createRenderer({
   insert,
 });
 export function createApp(component) {
-  return renderer.createApp(component);
+  const app = renderer.createApp(component);
+  app.mount = (id) => {
+    // TODO: normalizeContainer
+    const rootContainer = document.querySelector(id);
+    renderer.render(createVNode(component), rootContainer);
+  };
+  return app;
 }
 
 export * from "../runtime-core/index";

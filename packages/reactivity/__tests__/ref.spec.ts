@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ref, isRef, unRef } from "../src/ref";
+import { ref, isRef, unRef, proxyRefs } from "../src/ref";
 import { effect } from "../src/effect";
 import { reactive } from "../src";
 describe("ref", () => {
@@ -59,5 +59,25 @@ describe("ref tool function", () => {
     const dummy = 2;
     expect(unRef(num)).toBe(1);
     expect(unRef(dummy)).toBe(2);
+  });
+
+  it("proxyRefs", () => {
+    const user = {
+      age: ref(10),
+      name: "abc",
+    };
+
+    const proxyUser = proxyRefs(user);
+    expect(user.age.value).toBe(10);
+    expect(proxyUser.age).toBe(10);
+    expect(proxyUser.name).toBe("abc");
+
+    proxyUser.age = 20;
+    expect(proxyUser.age).toBe(20);
+    expect(user.age.value).toBe(20);
+
+    proxyUser.age = ref(10);
+    expect(proxyUser.age).toBe(10);
+    expect(user.age.value).toBe(10);
   });
 });

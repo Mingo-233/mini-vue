@@ -84,5 +84,6 @@ export function createRenderer(options) {
   }
   return {
     createApp: createAppApi(render),
+    render,
   };
 }
