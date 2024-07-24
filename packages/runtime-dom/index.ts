@@ -32,3 +32,4 @@ export function createApp(component) {
 }
 
 export * from "../runtime-core/index";
+export * from "../reactivity/src/index";

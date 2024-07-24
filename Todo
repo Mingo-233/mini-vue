@@ -1,5 +1,15 @@
 # 这里分解每个动作，或者模块要做的内容
 
+### element 更新流程搭建
+1. setup中会返回响应式数据，对返回值进行解包操作
+2. render函数放入effect环境，进行依赖收集
+3. 组件实例
+    - 添加isMounted标记，来区分首次还是更新。
+    - 添加subTree属性，来记录old vnode数据
+4. 组件处理环境中，加入新旧节点传参数
+5. setupRenderEffect 处理mount 和 update逻辑   
+
+
 ### createRenderer 自定义渲染实现
 1. 原先针对dom的操作封装一层抽象层，runtime-dom.
     - runtime-core createRender

@@ -3,6 +3,7 @@ import { PublicInstanceProxyHandlers } from "./componentPublicInstance";
 import { initProps } from "./componentProps";
 import { emit } from "./componentEmit";
 import { initSlots } from "./componentSlots";
+import { proxyRefs } from "../reactivity/src";
 let currentInstance = null;
 export function createComponentInstance(vnode, parent) {
   const instance = {
@@ -14,6 +15,8 @@ export function createComponentInstance(vnode, parent) {
     emit: () => {},
     provides: parent ? parent.provides : {},
     parent: parent,
+    isMounted: false,
+    subTree: {},
   };
   instance.emit = emit.bind(null, instance) as any;
   return instance;
@@ -41,7 +44,7 @@ function setupStatefulComponent(instance) {
 
 function handleSetupResult(instance, setupResult) {
   if (typeof setupResult === "object") {
-    instance.setupState = setupResult;
+    instance.setupState = proxyRefs(setupResult);
   }
   finishComponentSetup(instance);
 }
