@@ -48,7 +48,7 @@ function patchKeyedChildren(
   if (i > e1) {
     if (i <= e2) {
       // 有 anchor 的情况：新节点会被插入到 anchor 节点之前，这样可以保持节点顺序。
-// 无 anchor 的情况：新节点会被插入到容器的末尾。
+      // 无 anchor 的情况：新节点会被插入到容器的末尾。
       const nextPos = e2 + 1;
       const anchor = nextPos < l2 ? c2[nextPos].el : null;
       while (i <= e2) {
