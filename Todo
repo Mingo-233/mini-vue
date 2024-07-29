@@ -1,4 +1,15 @@
 # 这里分解每个动作，或者模块要做的内容
+## patchKeyedChildren 1.0
+1. 增加vnode的key属性
+2. 增加辅助函数isSomeVNodeType
+
+## patchChild 更新流程 -text
+1. 编写调试样例，text内容变化
+2. runtime-dom新增 remove和setElementText方法
+3. patchChild方法中，对比新旧节点，文字不同的情况下，更新文本内容
+4. 旧节点文字，新节点数组的情况
+5. 旧节点数组，新节点文本的情况
+
 
 ## patchProps 更新属性流程
 1. 编写调试样例
