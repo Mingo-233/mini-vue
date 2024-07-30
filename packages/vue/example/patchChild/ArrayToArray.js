@@ -6,17 +6,17 @@ import { ref, h } from "../../dist/mini-vue.esm-bundler.js";
 // 1. 左侧的对比
 // (a b) c
 // (a b) d e
-const prevChildren = [
-  h("p", { key: "A" }, "A"),
-  h("p", { key: "B" }, "B"),
-  h("p", { key: "C" }, "C"),
-];
-const nextChildren = [
-  h("p", { key: "A" }, "A"),
-  h("p", { key: "B" }, "B"),
-  h("p", { key: "D" }, "D"),
-  h("p", { key: "E" }, "E"),
-];
+// const prevChildren = [
+//   h("p", { key: "A" }, "A"),
+//   h("p", { key: "B" }, "B"),
+//   h("p", { key: "C" }, "C"),
+// ];
+// const nextChildren = [
+//   h("p", { key: "A" }, "A"),
+//   h("p", { key: "B" }, "B"),
+//   h("p", { key: "D" }, "D"),
+//   h("p", { key: "E" }, "E"),
+// ];
 
 // 2. 右侧的对比
 // a (b c)
@@ -44,7 +44,6 @@ const nextChildren = [
 //   h("p", { key: "A" }, "A"),
 //   h("p", { key: "B" }, "B"),
 //   h("p", { key: "C" }, "C"),
-//   h("p", { key: "D" }, "D"),
 // ];
 
 // 右侧
@@ -54,6 +53,7 @@ const nextChildren = [
 // const prevChildren = [h("p", { key: "A" }, "A"), h("p", { key: "B" }, "B")];
 // const nextChildren = [
 //   h("p", { key: "C" }, "C"),
+//   h("p", { key: "D" }, "D"),
 //   h("p", { key: "A" }, "A"),
 //   h("p", { key: "B" }, "B"),
 // ];
@@ -96,11 +96,30 @@ const nextChildren = [
 // D 节点在新的里面是没有的 - 需要删除掉
 // C 节点 props 也发生了变化
 
+const prevChildren = [
+  h("p", { key: "A" }, "A"),
+  h("p", { key: "B" }, "B"),
+  h("p", { key: "C", id: "c-prev" }, "C"),
+  h("p", { key: "D" }, "D"),
+  h("p", { key: "F" }, "F"),
+  h("p", { key: "G" }, "G"),
+];
+
+const nextChildren = [
+  h("p", { key: "A" }, "A"),
+  h("p", { key: "B" }, "B"),
+  h("p", { key: "E" }, "E"),
+  h("p", { key: "C", id: "c-next" }, "C"),
+  h("p", { key: "F" }, "F"),
+  h("p", { key: "G" }, "G"),
+];
+// 5.2 移动 (节点存在于新的和老的里面，但是位置变了)
 // const prevChildren = [
 //   h("p", { key: "A" }, "A"),
 //   h("p", { key: "B" }, "B"),
-//   h("p", { key: "C", id: "c-prev" }, "C"),
+//   h("p", { key: "C" }, "C"),
 //   h("p", { key: "D" }, "D"),
+//   h("p", { key: "E" }, "E"),
 //   h("p", { key: "F" }, "F"),
 //   h("p", { key: "G" }, "G"),
 // ];
@@ -109,7 +128,30 @@ const nextChildren = [
 //   h("p", { key: "A" }, "A"),
 //   h("p", { key: "B" }, "B"),
 //   h("p", { key: "E" }, "E"),
-//   h("p", { key: "C", id:"c-next" }, "C"),
+//   h("p", { key: "C" }, "C"),
+//   h("p", { key: "D" }, "D"),
+//   h("p", { key: "F" }, "F"),
+//   h("p", { key: "G" }, "G"),
+// ];
+// 5.3. 创建新的节点
+// a,b,(c,e),f,g
+// a,b,(e,c,d),f,g
+// d 节点在老的节点中不存在，新的里面存在，所以需要创建
+// const prevChildren = [
+//   h("p", { key: "A" }, "A"),
+//   h("p", { key: "B" }, "B"),
+//   h("p", { key: "C" }, "C"),
+//   h("p", { key: "E" }, "E"),
+//   h("p", { key: "F" }, "F"),
+//   h("p", { key: "G" }, "G"),
+// ];
+
+// const nextChildren = [
+//   h("p", { key: "A" }, "A"),
+//   h("p", { key: "B" }, "B"),
+//   h("p", { key: "E" }, "E"),
+//   h("p", { key: "C" }, "C"),
+//   h("p", { key: "D" }, "D"),
 //   h("p", { key: "F" }, "F"),
 //   h("p", { key: "G" }, "G"),
 // ];

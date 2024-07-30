@@ -87,7 +87,9 @@ export function createRenderer(options) {
       const val = props[key];
       hostPatchProp(el, key, null, val);
     }
-    hostInsert(container, el);
+    console.log("mountElement-anchor", anchor);
+
+    hostInsert(container, el, anchor);
   }
   function patchElement(
     oldVnode,
@@ -166,150 +168,113 @@ export function createRenderer(options) {
     parentComponent,
     parentAnchor // 插入的参考节点
   ) {
+    const l1 = c1.length;
     const l2 = c2.length;
-    //   - `i`: 当前比较的起始索引，用于头部开始的对比。
     let i = 0;
-    //   - `e1`: 旧节点数组（`c1`）的尾部索引，表示旧节点的结束位置。
-    let e1 = c1.length - 1;
-    //   - `e2`: 新节点数组（`c2`）的尾部索引，表示新节点的结束位置。
+    let e1 = l1 - 1;
     let e2 = l2 - 1;
-
     function isSomeVNodeType(n1, n2) {
       return n1.type === n2.type && n1.key === n2.key;
     }
-    // 循环从头开始比较，直到遇到不同的节点为止。
+    // 左侧比较
     while (i <= e1 && i <= e2) {
       const n1 = c1[i];
       const n2 = c2[i];
-
       if (isSomeVNodeType(n1, n2)) {
         patch(n1, n2, container, parentComponent, parentAnchor);
       } else {
         break;
       }
-
       i++;
     }
-    // 循环从尾部开始比较，直到遇到不同的节点为止。
+
+    // 右侧比较
     while (i <= e1 && i <= e2) {
       const n1 = c1[e1];
       const n2 = c2[e2];
-
       if (isSomeVNodeType(n1, n2)) {
         patch(n1, n2, container, parentComponent, parentAnchor);
       } else {
         break;
       }
-
       e1--;
       e2--;
     }
 
+    // 新的比老的长-新增
     if (i > e1) {
       if (i <= e2) {
-        // 有 anchor 的情况：新节点会被插入到 anchor 节点之前，这样可以保持节点顺序。
-        // 无 anchor 的情况：新节点会被插入到容器的末尾。
         const nextPos = e2 + 1;
+        ///Note:  这里e2一定是比e1大，e2+1，就是当前索引i的后面一个节点。
+        //  如果这个节点存在（即小于l2这个总长度）,那么插入的参考节点就是后面这个节点
+        //  如果这个节点不存在，说明当前节点就是新节点中的最后一个节点了
         const anchor = nextPos < l2 ? c2[nextPos].el : null;
-        console.log("e2", e2);
-        console.log("anchor", anchor);
-
         while (i <= e2) {
-          // 如果旧节点数组已经遍历完，但新节点数组还有剩余，则将剩余的新节点插入 DOM 中。
-          patch(null, c2[i], container, parentComponent, anchor);
+          const newNode = c2[i];
+          patch(null, newNode, container, parentComponent, anchor);
           i++;
         }
       }
     } else if (i > e2) {
+      // 老的比新的长-删除
       while (i <= e1) {
-        // 如果新节点数组已经遍历完，但旧节点数组还有剩余，则将剩余的旧节点从 DOM 中移除。
         hostRemove(c1[i].el);
         i++;
       }
     } else {
       // 中间对比
-      //   - `s1`: 中间部分旧节点的开始索引。
-      //   - `s2`: 中间部分新节点的开始索引。
+      //   s1 中间部分旧节点的开始索引。
+      //   s2 中间部分新节点的开始索引。
       let s1 = i;
       let s2 = i;
-
-      // toBePatched：需要更新的新节点数量。
-      const toBePatched = e2 - s2 + 1;
-      let patched = 0;
-      // keyToNewIndexMap：映射新节点的 key 到其索引。
       const keyToNewIndexMap = new Map();
-      // newIndexToOldIndexMap：映射新旧节点的索引关系，用于确定节点是否需要移动。
-      const newIndexToOldIndexMap = new Array(toBePatched);
-      // moved：标记是否有节点需要移动。
-      let moved = false;
-      // maxNewIndexSoFar：记录遍历过程中遇到的最大新节点索引，用于判断是否有节点移动。
-
-      let maxNewIndexSoFar = 0;
-      for (let i = 0; i < toBePatched; i++) newIndexToOldIndexMap[i] = 0;
-
+      // 建立hashMap，存储新节点，后面在节点绑定了key的情况用于快速判断老节点在新节点中是否存在
       for (let i = s2; i <= e2; i++) {
-        const nextChild = c2[i];
-        keyToNewIndexMap.set(nextChild.key, i);
+        const nextNode = c2[i];
+        keyToNewIndexMap.set(nextNode.key, i);
       }
-
+      // 需要更新的新节点数
+      let toBePatched = e2 - s2 + 1;
+      // 当前已经处理更新的数量
+      let patched = 0;
+      // 遍历老节点
+      // 1. 需要找出老节点有，而新节点没有的 -> 需要把这个节点删除掉
+      // 2. 新老节点都有的，—> 需要 patch
       for (let i = s1; i <= e1; i++) {
-        const prevChild = c1[i];
-
+        const preNode = c1[i];
+        // 如果老的节点大于新节点的数量的话，那么这里在处理老节点的时候就直接删除即可
         if (patched >= toBePatched) {
-          hostRemove(prevChild.el);
-          continue;
+          hostRemove(preNode.el);
+          container;
         }
-
-        let newIndex;
-        if (prevChild.key != null) {
-          newIndex = keyToNewIndexMap.get(prevChild.key);
+        // 在新节点中存在同样值的索引值
+        let newIndex: any = undefined;
+        // key 存在就可以从map中去找。时间复杂度是o(1)
+        if (preNode.key) {
+          newIndex = keyToNewIndexMap.get(preNode.key);
         } else {
+          // 如果不存在，只能重新遍历。 时间复杂度是o(n)
           for (let j = s2; j <= e2; j++) {
-            if (isSomeVNodeType(prevChild, c2[j])) {
+            const nextNode = c2[j];
+            if (isSomeVNodeType(preNode, nextNode)) {
               newIndex = j;
-
               break;
             }
           }
         }
 
-        if (newIndex === undefined) {
-          hostRemove(prevChild.el);
+        // 说明在新节点中没有找到值一样的老节点，则将老节点删除
+        if (newIndex! === undefined) {
+          hostRemove(preNode.el);
         } else {
-          if (newIndex >= maxNewIndexSoFar) {
-            maxNewIndexSoFar = newIndex;
-          } else {
-            moved = true;
-          }
-
-          newIndexToOldIndexMap[newIndex - s2] = i + 1;
-          patch(prevChild, c2[newIndex], container, parentComponent, null);
+          // 新老节点都存在
+          patch(preNode, c2[newIndex], container, parentComponent, null);
           patched++;
-        }
-      }
-
-      const increasingNewIndexSequence = moved
-        ? getSequence(newIndexToOldIndexMap)
-        : [];
-      let j = increasingNewIndexSequence.length - 1;
-
-      for (let i = toBePatched - 1; i >= 0; i--) {
-        const nextIndex = i + s2;
-        const nextChild = c2[nextIndex];
-        const anchor = nextIndex + 1 < l2 ? c2[nextIndex + 1].el : null;
-
-        if (newIndexToOldIndexMap[i] === 0) {
-          patch(null, nextChild, container, parentComponent, anchor);
-        } else if (moved) {
-          if (j < 0 || i !== increasingNewIndexSequence[j]) {
-            hostInsert(nextChild.el, container, anchor);
-          } else {
-            j--;
-          }
         }
       }
     }
   }
+
   function processElement(
     oldVnode,
     newVnode,

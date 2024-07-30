@@ -8,6 +8,7 @@ export function createVNode(type, props?, children?) {
     type,
     props,
     children,
+    key: props && props.key,
     ShapeFlag:
       typeof type === "string"
         ? ShapeFlags.ELEMENT

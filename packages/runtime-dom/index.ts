@@ -18,8 +18,8 @@ function patchProp(el, key, oldValue, newValue) {
   }
 }
 
-function insert(container, el) {
-  container.append(el);
+function insert(container, el, anchor = null) {
+  container.insertBefore(el, anchor);
 }
 function setElementText(node, text) {
   node.textContent = text;
@@ -27,7 +27,7 @@ function setElementText(node, text) {
 function remove(el) {
   const parent = el.parentNode;
   if (parent) {
-    parent.remove(el);
+    parent.removeChild(el);
   }
 }
 const renderer = createRenderer({
