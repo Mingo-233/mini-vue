@@ -1,4 +1,18 @@
 # 这里分解每个动作，或者模块要做的内容
+## 组件更新逻辑
+1. 在组件实例上增加next属性，这个值表示下次更新的vnode数据
+2. 组件的实例代理对象上，新增$props公共属性
+3. 增加辅助函数shouldUpdateComponent(prevVNode, nextVNode)，用于判断是否需要执行更新组件的逻辑
+4. vnode 节点上增加component组件实例属性
+5. processComponent过程中增加判断分支，生成组件和更新组件
+6. updateComponent 函数实现
+    - 如果本次要更新组件的，更新当前实例的next属性，执行组件effect函数，render生成新的vnode
+    - 如果不更新组件。。。。
+7. 在新的effect函数中，要增加updateComponentPreRender流程
+    - 因为要进行新节点的render，所以要先把nextVnode的数据赋值给当前instance的vnode，然后将当前实例的next置为null
+    - instance的props也要更新
+
+
 ## patchKeyedChildren 5.0 
 中间对比-创建新的
 在新老索引的映射表newIndexToOldIndexMap中的值为0，即初始值，表示新节点在老的里面不存在，则需要创建新的
