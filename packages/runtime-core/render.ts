@@ -87,11 +87,10 @@ export function createRenderer(options) {
       const val = props[key];
       hostPatchProp(el, key, null, val);
     }
-    console.log("mountElement-anchor", anchor);
 
     hostInsert(container, el, anchor);
   }
-  function patchElement(
+  function updateElement(
     oldVnode,
     newVnode,
     container,
@@ -237,6 +236,12 @@ export function createRenderer(options) {
       let toBePatched = e2 - s2 + 1;
       // 当前已经处理更新的数量
       let patched = 0;
+      // 是否需要移动标记
+      let moved = false;
+      // 保持最大升序序列的索引，用于判断 移动标记是否发生变化
+      let maxNewIndexSoFar = 0;
+      // 新老索引的映射表,数组的索引为新节点的索引，value为这个同节点在老节点c1中的的索引
+      const newIndexToOldIndexMap = new Array(toBePatched).fill(0);
       // 遍历老节点
       // 1. 需要找出老节点有，而新节点没有的 -> 需要把这个节点删除掉
       // 2. 新老节点都有的，—> 需要 patch
@@ -268,13 +273,50 @@ export function createRenderer(options) {
           hostRemove(preNode.el);
         } else {
           // 新老节点都存在
+          newIndexToOldIndexMap[newIndex - s2] = i + 1;
+          // 新的 newIndex 如果一直是升序的话，那么就说明没有移动
+          // 所以我们可以记录最后一个节点在新的里面的索引，然后看看是不是升序的
+          if (newIndex >= maxNewIndexSoFar) {
+            maxNewIndexSoFar = newIndex;
+          } else {
+            moved = true;
+          }
           patch(preNode, c2[newIndex], container, parentComponent, null);
           patched++;
         }
       }
+      // example:increasingNewIndexSequence【1,2】 toBePatched = 2
+      const increasingNewIndexSequence = moved
+        ? getSequence(newIndexToOldIndexMap)
+        : [];
+      // 最长递增子序列的索引
+      let sequenceIndex = increasingNewIndexSequence.length - 1;
+      for (let i = toBePatched - 1; i >= 0; i--) {
+        const nextIndex = s2 + i;
+        const nextNode = c2[nextIndex];
+        // 判断这个新增节点后面还有没有节点，如果有的话，就插入到这个节点的前面，如果没有的话，就插入到最后
+        const anchor = nextIndex + 1 < l2 ? c2[nextIndex + 1].el : null;
+        // 说明节点在旧的节点中不存在，所以是新增节点
+        if (newIndexToOldIndexMap[i] === 0) {
+          patch(null, nextNode, container, parentComponent, anchor);
+        } else if (moved) {
+          // 需要移动
+          // 1. sequenceIndex 已经没有了 说明剩下的都需要移动了
+          // 2. increasingNewIndexSequence[sequenceIndex] !== i 说明当前的索引不在最长递增子序列中，需要移动
+          if (
+            sequenceIndex < 0 ||
+            increasingNewIndexSequence[sequenceIndex] !== i
+          ) {
+            console.log("move");
+            hostInsert(container, nextNode.el, anchor);
+          } else {
+            // 走到这一步说明，当前新节点的索引顺序和稳定序列中一致，命中了，则保持不动，继续下一步
+            sequenceIndex--;
+          }
+        }
+      }
     }
   }
-
   function processElement(
     oldVnode,
     newVnode,
@@ -285,7 +327,7 @@ export function createRenderer(options) {
     if (!oldVnode) {
       mountElement(newVnode, container, parentComponent, anchor);
     } else {
-      patchElement(oldVnode, newVnode, container, parentComponent, anchor);
+      updateElement(oldVnode, newVnode, container, parentComponent, anchor);
     }
   }
 
