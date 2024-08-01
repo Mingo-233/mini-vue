@@ -4,6 +4,7 @@ import { createAppApi } from "./createApp";
 import { Fragment, Text } from "./vnode";
 import { effect } from "../reactivity/src";
 import { isEmptyObject, EMPTY_OBJ } from "../shared";
+import { shouldUpdateComponent } from "./componentUpdateUtils";
 
 export function createRenderer(options) {
   const {
@@ -69,7 +70,11 @@ export function createRenderer(options) {
     parentComponent,
     anchor
   ) {
-    mountComponent(newVnode, container, parentComponent, anchor);
+    if (!oldVnode) {
+      mountComponent(newVnode, container, parentComponent, anchor);
+    } else {
+      updateComponent(oldVnode, newVnode);
+    }
   }
   function mountElement(vnode, container, parentComponent, anchor) {
     const el = hostCreateElement(vnode.type);
@@ -89,6 +94,20 @@ export function createRenderer(options) {
     }
 
     hostInsert(container, el, anchor);
+  }
+  function updateComponent(oldVnode, newVnode) {
+    const instance = (newVnode.component = oldVnode.component);
+
+    if (shouldUpdateComponent(oldVnode, newVnode)) {
+      instance.nextVnode = newVnode;
+      instance.update();
+      console.warn("m1-", "updateComponent");
+    } else {
+      // 这里同步的原因
+      // 如果 vnode 没有更新，当后续更新发生时，组件实例会持有一个过时的 vnode，这可能会导致渲染逻辑错误。
+      newVnode.el = oldVnode.el;
+      instance.vnode = newVnode;
+    }
   }
   function updateElement(
     oldVnode,
@@ -333,6 +352,7 @@ export function createRenderer(options) {
 
   function mountComponent(initialVNode, container, parentComponent, anchor) {
     const instance = createComponentInstance(initialVNode, parentComponent);
+    initialVNode.component = instance;
     setupComponent(instance);
     setupRenderEffect(instance, initialVNode, container, anchor);
   }
@@ -342,7 +362,7 @@ export function createRenderer(options) {
     });
   }
   function setupRenderEffect(instance, initialVNode, container, anchor) {
-    effect(() => {
+    instance.update = effect(() => {
       if (!instance.isMounted) {
         console.log("mount");
 
@@ -356,7 +376,12 @@ export function createRenderer(options) {
         instance.isMounted = true;
       } else {
         console.log("update");
-        const { proxy } = instance;
+        const { proxy, nextVnode } = instance;
+        if (nextVnode) {
+          // 这步el赋值感觉不做也没有影响，后面的patch的时候也会把旧的el赋值给新的vnode
+          instance.el = nextVnode.el;
+          updateComponentPreRender(instance, nextVnode);
+        }
         const oldSubTree = instance.subTree;
         const newSubTree = instance.render.call(proxy);
         instance.subTree = newSubTree;
@@ -365,7 +390,11 @@ export function createRenderer(options) {
       }
     });
   }
-
+  function updateComponentPreRender(instance, nextVnode) {
+    instance.vnode = nextVnode;
+    instance.nextVnode = null;
+    instance.props = nextVnode.props;
+  }
   // getSequence：计算最长递增子序列，用于确定哪些节点可以不移动。
   function getSequence(arr) {
     const p = arr.slice();

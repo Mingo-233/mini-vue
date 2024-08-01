@@ -3,6 +3,7 @@
 1. 在组件实例上增加next属性，这个值表示下次更新的vnode数据
 2. 组件的实例代理对象上，新增$props公共属性
 3. 增加辅助函数shouldUpdateComponent(prevVNode, nextVNode)，用于判断是否需要执行更新组件的逻辑
+    - 判断条件是，2个vnode中的props是否相同
 4. vnode 节点上增加component组件实例属性
 5. processComponent过程中增加判断分支，生成组件和更新组件
 6. updateComponent 函数实现

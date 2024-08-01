@@ -14,6 +14,7 @@ export function createVNode(type, props?, children?) {
         ? ShapeFlags.ELEMENT
         : ShapeFlags.STATEFUL_COMPONENT,
     el: undefined,
+    component: null, // 组件实例
   };
 
   if (typeof children === "string") {
