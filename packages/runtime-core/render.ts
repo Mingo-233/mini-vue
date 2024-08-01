@@ -5,6 +5,7 @@ import { Fragment, Text } from "./vnode";
 import { effect } from "../reactivity/src";
 import { isEmptyObject, EMPTY_OBJ } from "../shared";
 import { shouldUpdateComponent } from "./componentUpdateUtils";
+import { queueJob } from "./scheduler";
 
 export function createRenderer(options) {
   const {
@@ -362,33 +363,40 @@ export function createRenderer(options) {
     });
   }
   function setupRenderEffect(instance, initialVNode, container, anchor) {
-    instance.update = effect(() => {
-      if (!instance.isMounted) {
-        console.log("mount");
+    instance.update = effect(
+      () => {
+        if (!instance.isMounted) {
+          console.log("mount");
 
-        const { proxy } = instance;
-        const subTree = instance.render.call(proxy);
-        // Note: 当前实例作为下一个组件的父级
-        patch(null, subTree, container, instance, anchor);
-        // Note: 组件会找到一个真实dom内容的节点，作为它根元素。而这必须在patch之后，因为patch之后才会有el属性
-        initialVNode.el = subTree.el;
-        instance.subTree = subTree;
-        instance.isMounted = true;
-      } else {
-        console.log("update");
-        const { proxy, nextVnode } = instance;
-        if (nextVnode) {
-          // 这步el赋值感觉不做也没有影响，后面的patch的时候也会把旧的el赋值给新的vnode
-          instance.el = nextVnode.el;
-          updateComponentPreRender(instance, nextVnode);
+          const { proxy } = instance;
+          const subTree = instance.render.call(proxy);
+          // Note: 当前实例作为下一个组件的父级
+          patch(null, subTree, container, instance, anchor);
+          // Note: 组件会找到一个真实dom内容的节点，作为它根元素。而这必须在patch之后，因为patch之后才会有el属性
+          initialVNode.el = subTree.el;
+          instance.subTree = subTree;
+          instance.isMounted = true;
+        } else {
+          console.log("update");
+          const { proxy, nextVnode } = instance;
+          if (nextVnode) {
+            // 这步el赋值感觉不做也没有影响，后面的patch的时候也会把旧的el赋值给新的vnode
+            instance.el = nextVnode.el;
+            updateComponentPreRender(instance, nextVnode);
+          }
+          const oldSubTree = instance.subTree;
+          const newSubTree = instance.render.call(proxy);
+          instance.subTree = newSubTree;
+          // Note: 当前实例作为下一个组件的父级
+          patch(oldSubTree, newSubTree, container, instance, anchor);
         }
-        const oldSubTree = instance.subTree;
-        const newSubTree = instance.render.call(proxy);
-        instance.subTree = newSubTree;
-        // Note: 当前实例作为下一个组件的父级
-        patch(oldSubTree, newSubTree, container, instance, anchor);
+      },
+      {
+        scheduler: function () {
+          queueJob(instance.update);
+        },
       }
-    });
+    );
   }
   function updateComponentPreRender(instance, nextVnode) {
     instance.vnode = nextVnode;

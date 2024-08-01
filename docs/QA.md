@@ -7,3 +7,5 @@
 ## Q: updateComponent 环境中，里面的 instance 是从 oldVnode 的 component 属性上获取的，那么 vnode 属性的 component 属性是什么时候赋值上去的呢
 
 ## Q：nextVnode 是怎么生成的
+
+## Q: effect 中scheduler选项的作用是什么
