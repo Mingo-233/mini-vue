@@ -1,4 +1,14 @@
 # 这里分解每个动作，或者模块要做的内容
+## baseParse 实现
+主流程：
+1. 创建解析上下文 createParserContext
+2. 解析子节点 parseChildren 返回节点列表nodes
+    - 解析插值表达式。 parseInterpolation 返回解析后的插值节点。{type:xx,content:xx}
+3. 创建根节点 createRoot
+
+辅助函数:
+advanceBy 函数用于前进解析上下文的指针。
+
 ## nexttick实现
 问题背景：
 假设在同步代码中反复多次变化一个响应式数据，那么每次变化都会触发一次试图更新，这是很浪费的。
