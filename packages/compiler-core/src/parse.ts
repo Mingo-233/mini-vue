@@ -7,37 +7,60 @@ const enum TagType {
 }
 export function baseParse(content: string) {
   const context = createParserContext(content);
-  const children = parseChildren(context);
+  const children = parseChildren(context, []);
   return createRoot(children);
 }
 
-function parseChildren(context) {
+function parseChildren(context, ancestors) {
   const nodes: any[] = [];
-  const source = context.source;
-  let node;
-  if (source.startsWith("{{")) {
-    node = parseInterpolation(context);
-    nodes.push(node);
-  } else if (source[0] === "<") {
-    if (/[a-z]/i.test(source[1])) {
-      node = parseElement(context);
+  while (!isEnd(context, ancestors)) {
+    const source = context.source;
+    let node;
+    if (source.startsWith("{{")) {
+      node = parseInterpolation(context);
+      nodes.push(node);
+    } else if (source[0] === "<") {
+      if (/[a-z]/i.test(source[1])) {
+        node = parseElement(context, ancestors);
+        nodes.push(node);
+      }
+    }
+    if (!node) {
+      node = parseText(context);
       nodes.push(node);
     }
   }
-  if (!node) {
-    node = parseText(context);
-    nodes.push(node);
-  }
+
   return nodes;
 }
-function parseElement(context) {
-  const element = parseTag(context, TagType.Start);
-  parseTag(context, TagType.End);
+function parseElement(context, ancestors) {
+  const element: any = parseTag(context, TagType.Start);
+  ancestors.push(element);
+  element.children = parseChildren(context, ancestors);
+  ancestors.pop();
+  console.log("element", element);
+  console.log("context.source", context.source);
+
+  if (isStartsWithEndTag(context.source, element.tag)) {
+    // 消费结束标签
+    parseTag(context, TagType.End);
+  } else {
+    throw Error(`缺少结束标签:${element.tag}`);
+  }
+
   return element;
 }
 function parseText(context) {
-  const length = context.source.length;
-  const content = parseTextData(context, length);
+  // example: 'hi,{{message}}</div>' 解析到这种情况的时候，应该取的是'hi,'
+  let endIndex = context.source.length;
+  const endTokens = ["{{", "<"];
+  for (let i = 0; i < endTokens.length; i++) {
+    const endI = context.source.indexOf(endTokens[i]);
+    if (endI !== -1 && endIndex > endI) {
+      endIndex = endI;
+    }
+  }
+  const content = parseTextData(context, endIndex);
   return {
     type: NodeTypes.TEXT,
     content: content,
@@ -57,9 +80,11 @@ function parseTag(context, type: TagType) {
   advanceBy(context, match[0].length);
   // 跳过 '>' 字符。
   advanceBy(context, 1);
+  if (type === TagType.End) return;
   return {
     type: NodeTypes.ELEMENT,
     tag: tag,
+    children: [],
   };
 }
 function parseInterpolation(context) {
@@ -73,8 +98,9 @@ function parseInterpolation(context) {
   const rawContentLength = closeIndex - openDelimiter.length;
 
   // 提取原始内容。
-  const rawContent = context.source.slice(0, rawContentLength);
+  const rawContent = parseTextData(context, rawContentLength);
   const content = rawContent.trim();
+  advanceBy(context, closeDelimiter.length);
   // 返回解析后的插值节点。
   return {
     type: NodeTypes.INTERPOLATION,
@@ -83,6 +109,25 @@ function parseInterpolation(context) {
       content: content,
     },
   };
+}
+function isEnd(context, ancestors) {
+  const s = context.source;
+  // 1.判断是否是结束标签
+  if (s.startsWith("</")) {
+    // Note: 这里为什么用数组去循环找，就是为了找到一个结束标签，保证一定能退出外层的while循环
+    for (let i = ancestors.length - 1; i >= 0; i--) {
+      const tag = ancestors[i].tag;
+      if (isStartsWithEndTag(s, tag)) {
+        return true;
+      }
+    }
+  }
+  // 2.source是否存存在
+  return !s;
+}
+// 判断当前这个结束标签和前序的开始标签是否一致
+function isStartsWithEndTag(source, tag) {
+  return source.startsWith(`</`) && source.slice(2, 2 + tag.length) === tag;
 }
 // advanceBy 函数用于前进解析上下文的指针。
 function advanceBy(context: any, length: number) {
