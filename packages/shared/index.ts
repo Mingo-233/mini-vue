@@ -2,6 +2,7 @@ export const extend = Object.assign;
 
 export const isObject = (val) => val !== null && typeof val === "object";
 
+export const isString = (val) => typeof val === "string";
 export const isSameValue = (a, b) => Object.is(a, b);
 
 export const hasOwn = (val, key) =>

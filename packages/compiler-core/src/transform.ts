@@ -24,9 +24,11 @@ function createTransformContext(root, options) {
 
 function traverseNode(node, context) {
   const nodeTransforms = context.nodeTransforms;
+  const exitsFns: any[] = [];
   for (let i = 0; i < nodeTransforms.length; i++) {
     const fn = nodeTransforms[i];
-    fn(node);
+    const exitsFn = fn(node, context);
+    exitsFn && exitsFns.push(exitsFn);
   }
   switch (node.type) {
     case NodeTypes.ELEMENT:
@@ -40,6 +42,10 @@ function traverseNode(node, context) {
     default:
       break;
   }
+  let len = exitsFns.length;
+  while (len--) {
+    exitsFns[len]();
+  }
 }
 function traverseChildren(node, context) {
   const children = node.children;
@@ -52,5 +58,10 @@ function traverseChildren(node, context) {
 }
 
 function createRootCodeGen(root) {
-  root.codeGenNode = root.children[0];
+  const child = root.children[0];
+  if (child.type === NodeTypes.ELEMENT) {
+    root.codeGenNode = child.codeGenNode;
+  } else {
+    root.codeGenNode = root.children[0];
+  }
 }

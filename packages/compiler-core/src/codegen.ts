@@ -1,5 +1,10 @@
-import { TO_DISPLAY_STRING, helperMapName } from "./runtimeHelpers";
+import {
+  TO_DISPLAY_STRING,
+  CREATE_ELEMENT_VNODE,
+  helperMapName,
+} from "./runtimeHelpers";
 import { NodeTypes } from "./ast";
+import { isString } from "../../shared";
 
 export function generate(ast) {
   // 创建上下文
@@ -13,12 +18,10 @@ export function generate(ast) {
   const args = ["_ctx", "_cache"];
   const signature = args.join(",");
   push(`function ${functionName}(${signature}) {`);
-  //   push(`\n`);
 
   push(`return `);
   // 拼接代码内容
   genNode(ast.codeGenNode, context);
-  //   push(`\n`);
   push(`}`);
 
   return {
@@ -57,18 +60,61 @@ function genNode(node, context) {
     case NodeTypes.TEXT:
       genText(node, context);
       break;
+    case NodeTypes.ELEMENT:
+      genElement(node, context);
+      break;
     case NodeTypes.INTERPOLATION:
       genInterpolation(node, context);
       break;
     case NodeTypes.SIMPLE_EXPRESSION:
       genExpression(node, context);
       break;
+    case NodeTypes.COMPOUND_EXPRESSION:
+      genCompoundExpression(node, context);
+      break;
 
     default:
       break;
   }
 }
-
+function genCompoundExpression(node, context) {
+  const { push } = context;
+  const child = node.children;
+  for (let i = 0; i < child.length; i++) {
+    const node = child[i];
+    if (isString(node)) {
+      push(node);
+    } else {
+      genNode(node, context);
+    }
+  }
+}
+function genElement(node, context) {
+  //example: <div>123</div> -> _createElementVnode('div','null',123)
+  const { push, helper } = context;
+  const { tag, props, children } = node;
+  push(`${helper(CREATE_ELEMENT_VNODE)}(`);
+  genNodeList(genNullable([tag, props, children]), context);
+  push(`)`);
+}
+function genNodeList(nodes, context) {
+  const { push } = context;
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i];
+    if (isString(node)) {
+      push(`'${node}'`);
+    } else {
+      genNode(node, context);
+    }
+    // 参数位之间分割，最后一位的时候不用加，所以-1
+    if (i < nodes.length - 1) {
+      push(",");
+    }
+  }
+}
+function genNullable(arr) {
+  return arr.map((item) => item || "null");
+}
 function genText(node, context) {
   const { push } = context;
   push(`'${node.content}'`);

@@ -38,8 +38,6 @@ function parseElement(context, ancestors) {
   ancestors.push(element);
   element.children = parseChildren(context, ancestors);
   ancestors.pop();
-  console.log("element", element);
-  console.log("context.source", context.source);
 
   if (isStartsWithEndTag(context.source, element.tag)) {
     // 消费结束标签
