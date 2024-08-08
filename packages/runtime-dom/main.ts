@@ -3,9 +3,15 @@ export * from "./index";
 import { baseCompile } from "../compiler-core/src";
 import * as runtimeDom from "./index";
 import { registerRuntimeCompiler } from "../runtime-dom";
-
 function compileToFunction(template) {
-  const { code } = baseCompile(template);
+  //   const { code } = baseCompile(template);
+  console.log(runtimeDom);
+  console.log(runtimeDom.createElementVNode);
+
+  let code = `
+const {createElementVNode:_createElementVNode} from Vue
+return function render(_ctx,_cache) {return _createElementVNode('div','null','hi,abc')}
+`;
   // 这个vue是一个形参，传入的实参是runtimeDom
   const render = new Function("Vue", code)(runtimeDom);
   return render;
