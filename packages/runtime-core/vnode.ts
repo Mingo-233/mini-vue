@@ -28,6 +28,7 @@ export function createVNode(type, props?, children?) {
 
   return vnode;
 }
+export { createVNode as createElementVNode };
 export function createTextVNode(text) {
   return createVNode(Text, null, text);
 }

@@ -1,7 +1,7 @@
 import typescript from "@rollup/plugin-typescript";
 export default {
   plugins: [typescript()],
-  input: "./packages/runtime-dom/index.ts",
+  input: "./packages/runtime-dom/main.ts",
   output: [
     // {
     //     format: "cjs",

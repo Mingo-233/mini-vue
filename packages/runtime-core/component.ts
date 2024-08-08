@@ -5,6 +5,7 @@ import { emit } from "./componentEmit";
 import { initSlots } from "./componentSlots";
 import { proxyRefs } from "../reactivity/src";
 let currentInstance = null;
+let compile;
 export function createComponentInstance(vnode, parent) {
   const instance = {
     vnode,
@@ -52,6 +53,9 @@ function handleSetupResult(instance, setupResult) {
 
 function finishComponentSetup(instance) {
   const component = instance.type;
+  if (component.template && compile && !component.render) {
+    component.render = compile(component.template);
+  }
   instance.render = component.render;
 }
 export function getCurrentInstance() {
@@ -59,4 +63,8 @@ export function getCurrentInstance() {
 }
 function setCurrentInstance(instance) {
   currentInstance = instance;
+}
+
+export function registerRuntimeCompiler(_compile) {
+  compile = _compile;
 }
