@@ -13,5 +13,6 @@ export const isEmptyObject = (val) => Reflect.ownKeys(val).length === 0;
 export const EMPTY_OBJ = {};
 
 export function toDisplayString(val) {
-  return Object.prototype.toString.call(val);
+  // return Object.prototype.toString.call(val);
+  return String(val);
 }

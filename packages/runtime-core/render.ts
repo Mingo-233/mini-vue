@@ -369,7 +369,8 @@ export function createRenderer(options) {
           console.log("mount");
 
           const { proxy } = instance;
-          const subTree = instance.render.call(proxy);
+          // compile生成的render函数是这样的 function render(_ctx,_cache) ，所以要传入第一个参数 上下文对象
+          const subTree = instance.render.call(proxy, proxy);
           // Note: 当前实例作为下一个组件的父级
           patch(null, subTree, container, instance, anchor);
           // Note: 组件会找到一个真实dom内容的节点，作为它根元素。而这必须在patch之后，因为patch之后才会有el属性
@@ -385,7 +386,7 @@ export function createRenderer(options) {
             updateComponentPreRender(instance, nextVnode);
           }
           const oldSubTree = instance.subTree;
-          const newSubTree = instance.render.call(proxy);
+          const newSubTree = instance.render.call(proxy, proxy);
           instance.subTree = newSubTree;
           // Note: 当前实例作为下一个组件的父级
           patch(oldSubTree, newSubTree, container, instance, anchor);

@@ -33,9 +33,7 @@ function genFunctionPreamble(ast, context) {
   const VueBinging = "Vue";
   const aliasHelper = (s) => `${helperMapName[s]}:_${helperMapName[s]}`;
   if (ast.helpers.length) {
-    push(
-      `const {${ast.helpers.map(aliasHelper).join(",")}} from ${VueBinging}`
-    );
+    push(`const {${ast.helpers.map(aliasHelper).join(",")}} = ${VueBinging}`);
   }
   push(`\n`);
 
@@ -102,7 +100,7 @@ function genNodeList(nodes, context) {
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
     if (isString(node)) {
-      push(`'${node}'`);
+      push(node);
     } else {
       genNode(node, context);
     }
