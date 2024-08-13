@@ -1,15 +1,17 @@
 {
-  "name": "@mini-vue/reactivity",
+  "name": "@mini-vue/runtime-dom",
   "version": "1.0.0",
-  "description": "",
+  "description": "@mini-vue/runtime-dom",
   "main": "./src/index",
+  "module": "dist/shared.esm-bundler.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "author": "Mingo",
+  "author": "",
   "license": "ISC",
   "dependencies": {
+    "@mini-vue/reactivity": "workspace:^1.0.0",
     "@mini-vue/shared": "workspace:^1.0.0"
   }
 }

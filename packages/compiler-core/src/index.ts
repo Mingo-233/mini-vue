@@ -1,1 +1,1 @@
-export * from "./compile";
+export { baseCompile } from "./compile";

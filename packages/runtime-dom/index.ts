@@ -1,4 +1,4 @@
-import { createRenderer, createVNode } from "../runtime-core";
+import { createRenderer, createVNode } from "@mini-vue/runtime-core";
 function createElement(type) {
   return document.createElement(type);
 }
@@ -47,5 +47,4 @@ export function createApp(component) {
   return app;
 }
 
-export * from "../runtime-core/index";
-export * from "../reactivity/src/index";
+export * from "@mini-vue/runtime-core";

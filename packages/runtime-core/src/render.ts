@@ -1,9 +1,8 @@
-import { ShapeFlags } from "../shared/shapeFlags";
+import { ShapeFlags, EMPTY_OBJ } from "@mini-vue/shared";
 import { createComponentInstance, setupComponent } from "./component";
 import { createAppApi } from "./createApp";
 import { Fragment, Text } from "./vnode";
-import { effect } from "../reactivity/src";
-import { isEmptyObject, EMPTY_OBJ } from "../shared";
+import { effect } from "@mini-vue/reactivity";
 import { shouldUpdateComponent } from "./componentUpdateUtils";
 import { queueJob } from "./scheduler";
 

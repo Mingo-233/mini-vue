@@ -1,0 +1,16 @@
+{
+  "name": "@mini-vue/runtime-core",
+  "version": "1.0.0",
+  "description": "@mini-vue/runtime-core",
+  "main": "./index",
+  "scripts": {
+    "test": "vitest"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@mini-vue/runtime-core": "workspace:^1.0.0",
+    "@mini-vue/shared": "workspace:^1.0.0"
+  }
+}

@@ -1,18 +1,61 @@
 lockfileVersion: 5.4
 
-specifiers:
-  '@rollup/plugin-typescript': ^11.1.6
-  rollup: ^4.18.1
-  tslib: ^2.6.3
-  typescript: ^5.5.3
-  vitest: ^2.0.3
+importers:
 
-devDependencies:
-  '@rollup/plugin-typescript': 11.1.6_jq6y52dar5romiuwmp2k6omq2e
-  rollup: 4.18.1
-  tslib: 2.6.3
-  typescript: 5.5.3
-  vitest: 2.0.3
+  .:
+    specifiers:
+      '@rollup/plugin-typescript': ^11.1.6
+      rollup: ^4.18.1
+      tslib: ^2.6.3
+      typescript: ^5.5.3
+      vitest: ^2.0.3
+    devDependencies:
+      '@rollup/plugin-typescript': 11.1.6_jq6y52dar5romiuwmp2k6omq2e
+      rollup: 4.18.1
+      tslib: 2.6.3
+      typescript: 5.5.3
+      vitest: 2.0.3
+
+  packages/compiler-core:
+    specifiers:
+      '@mini-vue/shared': workspace:^1.0.0
+    dependencies:
+      '@mini-vue/shared': link:../shared
+
+  packages/reactivity:
+    specifiers:
+      '@mini-vue/shared': workspace:^1.0.0
+    dependencies:
+      '@mini-vue/shared': link:../shared
+
+  packages/runtime-core:
+    specifiers:
+      '@mini-vue/reactivity': workspace:^1.0.0
+      '@mini-vue/shared': workspace:^1.0.0
+    dependencies:
+      '@mini-vue/reactivity': link:../reactivity
+      '@mini-vue/shared': link:../shared
+
+  packages/runtime-dom:
+    specifiers:
+      '@mini-vue/runtime-core': workspace:^1.0.0
+      '@mini-vue/shared': workspace:^1.0.0
+    dependencies:
+      '@mini-vue/runtime-core': 'link:'
+      '@mini-vue/shared': link:../shared
+
+  packages/shared:
+    specifiers: {}
+
+  packages/vue:
+    specifiers:
+      '@mini-vue/compiler-core': workspace:^1.0.0
+      '@mini-vue/runtime-dom': workspace:^1.0.0
+      '@mini-vue/shared': workspace:^1.0.0
+    dependencies:
+      '@mini-vue/compiler-core': link:../compiler-core
+      '@mini-vue/runtime-dom': link:../runtime-core
+      '@mini-vue/shared': link:../shared
 
 packages:
 
