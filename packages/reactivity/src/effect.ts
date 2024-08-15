@@ -1,4 +1,4 @@
-import { extend } from "../../shared/index";
+import { extend } from "@mini-vue/shared";
 const targetMap = new Map();
 let activeEffect: any = null;
 let shouldTrack = false;

@@ -1,4 +1,4 @@
-import { ShapeFlags } from "../shared/shapeFlags";
+import { ShapeFlags } from "@mini-vue/shared";
 export function initSlots(instance, children) {
   const { vnode } = instance;
   if (ShapeFlags.SLOTS_CHILDREN & vnode.ShapeFlag) {

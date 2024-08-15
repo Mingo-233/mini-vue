@@ -1,7 +1,7 @@
 {
-  "name": "@mini-vue/runtime-dom",
+  "name": "@mini-vue/runtime-core",
   "version": "1.0.0",
-  "description": "@mini-vue/runtime-dom",
+  "description": "@mini-vue/runtime-core",
   "main": "./src/index",
   "module": "dist/shared.esm-bundler.js",
   "scripts": {

@@ -1,9 +1,8 @@
-import { shallowReadonly } from "../reactivity/src/reactive";
+import { shallowReadonly, proxyRefs } from "@mini-vue/reactivity";
 import { PublicInstanceProxyHandlers } from "./componentPublicInstance";
 import { initProps } from "./componentProps";
 import { emit } from "./componentEmit";
 import { initSlots } from "./componentSlots";
-import { proxyRefs } from "../reactivity/src";
 let currentInstance = null;
 let compile;
 export function createComponentInstance(vnode, parent) {

@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "rollup -c rollup.config.js",
+    "clean": "./scripts/clean.sh",
     "test": "vitest"
   },
   "keywords": [],

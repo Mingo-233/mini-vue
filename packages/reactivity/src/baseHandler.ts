@@ -1,4 +1,4 @@
-import { extend, isObject } from "../../shared";
+import { extend, isObject } from "@mini-vue/shared";
 import { trigger, track } from "./effect";
 import { ReactiveFlags, reactive, readonly } from "./reactive";
 
@@ -10,7 +10,7 @@ const readonlyGetter = createGetter({
 const shallowReadonlyGetter = createGetter({
   isReadonly: true,
   isShallow: true,
-})
+});
 
 const Setter = createSetter();
 export function createGetter(
@@ -26,7 +26,7 @@ export function createGetter(
       return !option.isReadonly;
     }
     const res = Reflect.get(target, key);
-    if(option.isShallow ) return res
+    if (option.isShallow) return res;
     if (isObject(res)) {
       return option.isReadonly ? readonly(res) : reactive(res);
     }
@@ -62,4 +62,6 @@ export const readonlyHandler = {
   },
 };
 
-export const shallowReadonlyHandler = extend({}, readonlyHandler, {  get: shallowReadonlyGetter,})
+export const shallowReadonlyHandler = extend({}, readonlyHandler, {
+  get: shallowReadonlyGetter,
+});

@@ -41,7 +41,7 @@ importers:
       '@mini-vue/runtime-core': workspace:^1.0.0
       '@mini-vue/shared': workspace:^1.0.0
     dependencies:
-      '@mini-vue/runtime-core': 'link:'
+      '@mini-vue/runtime-core': link:../runtime-core
       '@mini-vue/shared': link:../shared
 
   packages/shared:
@@ -54,7 +54,7 @@ importers:
       '@mini-vue/shared': workspace:^1.0.0
     dependencies:
       '@mini-vue/compiler-core': link:../compiler-core
-      '@mini-vue/runtime-dom': link:../runtime-core
+      '@mini-vue/runtime-dom': link:../runtime-dom
       '@mini-vue/shared': link:../shared
 
 packages:

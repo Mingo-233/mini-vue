@@ -1,4 +1,4 @@
-import { isObject, isSameValue } from "../../shared";
+import { isObject, isSameValue } from "@mini-vue/shared";
 import { trackEffects, triggerEffects, isTracking } from "./effect";
 import { reactive } from "./reactive";
 

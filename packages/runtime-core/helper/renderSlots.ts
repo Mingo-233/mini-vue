@@ -1,4 +1,4 @@
-import { createVNode, Fragment } from "../vnode";
+import { createVNode, Fragment } from "../src/vnode";
 export function renderSlots(slots, slotName, params) {
   const slot = slots[slotName];
   if (slot && typeof slot === "function") {

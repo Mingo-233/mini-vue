@@ -1,5 +1,4 @@
-import { isObject } from "../shared";
-import { ShapeFlags } from "../shared/shapeFlags";
+import { isObject, ShapeFlags } from "@mini-vue/shared";
 
 export const Fragment = Symbol("Fragment");
 export const Text = Symbol("Text");
